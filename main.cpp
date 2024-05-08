@@ -17,6 +17,11 @@ InterruptIn fdcY1(D5); // ymax
 DigitalOut direcaoZ(D7);
 DigitalOut enableZ(D6);
 InterruptIn fdcZ1(D4); // zmax*/
+AnalogIn EixoXJoyStick(A0);
+AnalogIn EixoYJoyStick(A1);
+
+
+
 
 
 Serial pc(USBTX, USBRX); // declara o objeto pc para comunicação serial
@@ -27,6 +32,11 @@ int j; //valor do joystick
 bool referenciadoX=false;
 bool referenciadoY=false;
 bool referenciadoZ=false;
+int posX=0;
+int posY=0;
+int posZ=0;
+int joyX;
+int joyY;
 
 void flip() {
     StepDriverXY = !StepDriverXY;
@@ -43,6 +53,7 @@ void refEixoX(){
             break;
         }
         enableX=0;
+        printf("StepDriverXY");
     }
     if (referenciadoX){
         direcaoX=!direcaoX;
@@ -88,6 +99,44 @@ void refEixoY(){
 }
 
 */
+void jog(){
+    joyX = EixoXJoyStick.read() * 1000;
+    joyY = EixoYJoyStick.read() * 1000;
+
+    if (joyX<450){
+        direcaoX=1;
+        enableX=0;
+        if (StepDriverXY==1){
+            posX +=1;
+
+        }
+    }
+    if (joyX>550){
+        direcaoX=0;
+        enableX=0;
+        if (StepDriverXY==1){
+            posX -= 1;
+
+        }
+            
+    }
+    if(joyX<550 && joyX>450){
+        enableX=1;
+    }
+
+    if (joyY<450){
+        direcaoY=1;
+        enableY=0;
+    }
+    if (joyY>550){
+        direcaoY=0;
+        enableY=0;
+            
+    }
+    if(joyY<550 && joyY>450){
+        enableY=1;
+    }
+}
 
 
 
@@ -103,11 +152,15 @@ int main() {
     //StepDriverZ = 1;
     
     while (1) {
-        if (i==0){
-            refEixoX();
-            refEixoY();
+        if (i==0){ //referenciamento
+            //refEixoX();
+            //refEixoY();
             //refEixoZ();
             i=1;
+        }
+        if (i==1){ //jog
+            jog();
+            printf("\r X=%4d ",posX);
         }
 
         
