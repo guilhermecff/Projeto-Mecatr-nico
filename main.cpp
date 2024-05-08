@@ -105,9 +105,10 @@ void refEixoZ(){
 void jog(){
     joyX = EixoXJoyStick.read() * 1000;
     joyY = EixoYJoyStick.read() * 1000;
-
+    
     // PARA X
-    if (joyX<430){
+    
+    if (joyX<430 && fdcX1 == 1){
         direcaoX=1;
         enableX=0;
         if (StepDriverXY==1){
@@ -115,7 +116,7 @@ void jog(){
 
         }
     }
-    if (joyX>550){
+    else if (joyX>550 && fdcX1 == 1){
         direcaoX=0;
         enableX=0;
         if (StepDriverXY==1){
@@ -124,13 +125,13 @@ void jog(){
         }
             
     }
-    if(joyX<550 && joyX>430){
+    else{
         enableX=1;
     }
 
     //PARA Y
 
-    if (joyY<430){
+    if (joyY<430 && fdcY1 == 1){
         direcaoY=1;
         enableY=0;
         if (StepDriverXY==1){
@@ -138,7 +139,7 @@ void jog(){
 
         }
     }
-    if (joyY>550){
+    else if (joyY>550 && fdcY1 == 1){
         direcaoY=0;
         enableY=0;
         if (StepDriverXY==1){
@@ -147,21 +148,23 @@ void jog(){
         }
             
     }
-    if(joyY<550 && joyY>430){
+    else{
         enableY=1;
     }
     //PARA Z
 
-    if (BotaoZcima == 0) {
+    if (BotaoZcima == 0 && fdcZ1 == 1) {
         // Move Z up
         direcaoZ = 0;
         enableZ = 0;
+        posZ += 1;
 
 
-    } else if (BotaoZbaixo == 0) {
+    } else if (BotaoZbaixo == 0 && fdcZ1 == 1) {
         // Move Z down
         direcaoZ = 1;
         enableZ = 0;
+        posZ -= 1;
         
 
     } else {
@@ -172,6 +175,8 @@ void jog(){
 
 
 }
+
+
 
 
 
@@ -186,15 +191,15 @@ int main() {
 
     while (1) {
         if (i == 0) { // Reference positioning
-            /*refEixoX();
+            refEixoX();
             refEixoY();
-            refEixoZ();*/
+            refEixoZ();
             i = 1;
         }
 
         if (i == 1) { // Manual control (jog)
             jog();
-            printf("\r X=%4d ", posX); // Assuming you want to display posX, change if needed
+            
         }
     }
 }
