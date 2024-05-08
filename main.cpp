@@ -6,19 +6,17 @@ DigitalOut StepDriverXY(D11);
 DigitalOut direcaoX(D12);
 DigitalOut enableX(D13);
 InterruptIn fdcX1(D10); // xmax
-//AnalogIn EixoXJoyStick(A0);
 //PARA Y
 DigitalOut direcaoY(D7);
 DigitalOut enableY(D8);
 InterruptIn fdcY1(D5); // ymax
-//AnalogIn EixoYJoyStick(A0);
 // PARA Z
-/*DigitalOut StepDriverZ(D5);
-DigitalOut direcaoZ(D7);
-DigitalOut enableZ(D6);
+DigitalOut direcaoZ(D14);
+DigitalOut enableZ(D15);
 InterruptIn fdcZ1(D4); // zmax*/
 AnalogIn EixoXJoyStick(A0);
 AnalogIn EixoYJoyStick(A1);
+
 
 
 
@@ -28,7 +26,6 @@ Serial pc(USBTX, USBRX); // declara o objeto pc para comunicação serial
 
 int y, ymax, ymin;
 int i = 0;
-int j; //valor do joystick
 bool referenciadoX=false;
 bool referenciadoY=false;
 bool referenciadoZ=false;
@@ -40,7 +37,6 @@ int joyY;
 
 void flip() {
     StepDriverXY = !StepDriverXY;
-    //StepDriverZ= !StepDriverZ;
 }
 
 
@@ -53,7 +49,6 @@ void refEixoX(){
             break;
         }
         enableX=0;
-        printf("StepDriverXY");
     }
     if (referenciadoX){
         direcaoX=!direcaoX;
@@ -79,7 +74,7 @@ void refEixoY(){
     }
 
 }
-/*void refEixoZ(){
+void refEixoZ(){
     
     enableZ=1;
     direcaoZ=0;
@@ -98,7 +93,7 @@ void refEixoY(){
 
 }
 
-*/
+
 void jog(){
     joyX = EixoXJoyStick.read() * 1000;
     joyY = EixoYJoyStick.read() * 1000;
@@ -127,10 +122,18 @@ void jog(){
     if (joyY<450){
         direcaoY=1;
         enableY=0;
+        if (StepDriverXY==1){
+            posY -= 1;
+
+        }
     }
     if (joyY>550){
         direcaoY=0;
         enableY=0;
+        if (StepDriverXY==1){
+            posY -= 1;
+
+        }
             
     }
     if(joyY<550 && joyY>450){
@@ -147,21 +150,21 @@ int main() {
     
     enableX = 1;
     enableY = 1;
-    //enableZ = 1;
+    enableZ = 1;
     StepDriverXY = 1;
     //StepDriverZ = 1;
     
     while (1) {
         if (i==0){ //referenciamento
-            //refEixoX();
-            //refEixoY();
-            //refEixoZ();
+            refEixoX();
+            refEixoY();
+            refEixoZ();
             i=1;
         }
-        if (i==1){ //jog
+        /*if (i==1){ //jog
             jog();
             printf("\r X=%4d ",posX);
-        }
+        }*/
 
         
         
