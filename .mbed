@@ -1,5 +1,5 @@
 ROOT=.
-TARGET=NUCLEO_F401RE
-TARGET_CODE=0720
 DEVICE_ID[/home/studio/workspace/projeto-mecatr-nico]=066BFF383034544157085139
 DEVICE_TYPE[/home/studio/workspace/projeto-mecatr-nico]=connected
+TARGET=NUCLEO_F401RE
+TARGET_CODE=0720

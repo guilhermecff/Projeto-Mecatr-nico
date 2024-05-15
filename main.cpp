@@ -43,13 +43,17 @@ int posY=0;
 int posZ=0;
 int joyX;
 int joyY;
+bool selecionar = false;
+int mililitros = 1;
+int sinalJog = 1;
 
-int savedPositions[9][3]; // Array to store up to 9 positions [x, y, z]
+int savedPositions[9][4]; // Array to store up to 9 positions [x, y, z]
 
 
 
 int savedCount = 0; // This will keep track of how many positions have been saved
 int numSaved = 0;
+
 
 
 void flip() {
@@ -111,70 +115,138 @@ void refEixoZ(){
 
 }
 
+/*int quantidades(){
+    selecionar = false;
+    mililitros = 1;
+    enableX = 1;
+    enableY = 1;
+    enableZ = 1;
 
-void jog() {
-    joyX = EixoXJoyStick.read() * 1000;
-    joyY = EixoYJoyStick.read() * 1000;
-    
-    // Logic for moving X
-    if (joyX < 430 && fdcX1 == 1) {
-        direcaoX = 1;
-        enableX = 0;
-        if (StepDriverXY == 1) {
-            posX += 1;
+    while(!selecionar){
+        if (BotaoZcima == 0){
+            mililitros += 1;
         }
-    } else if (joyX > 550 && fdcX1 == 1) {
-        direcaoX = 0;
-        enableX = 0;
-        if (StepDriverXY == 1) {
-            posX -= 1;
+        if (BotaoZbaixo == 0){
+            mililitros -= 1;
         }
-    } else {
+        if (saveButton == 0){
+            selecionar = true;
+        }
+    return mililitros;
+
+    }
+        
+}*/
+
+
+void jog(){
+    while (sinalJog == 1){
+        joyX = EixoXJoyStick.read() * 1000;
+        joyY = EixoYJoyStick.read() * 1000;
+        
+        // Logic for moving X
+        if (joyX < 430 && fdcX1 == 1) {
+            direcaoX = 1;
+            enableX = 0;
+            if (StepDriverXY == 1) {
+                posX += 1;
+            }
+        } else if (joyX > 550 && fdcX1 == 1) {
+            direcaoX = 0;
+            enableX = 0;
+            if (StepDriverXY == 1) {
+                posX -= 1;
+            }
+        } else {
+            enableX = 1;
+        }
+
+        // Logic for moving Y
+        if (joyY < 430 && fdcY1 == 1) {
+            direcaoY = 1;
+            enableY = 0;
+            if (StepDriverXY == 1) {
+                posY += 1;
+            }
+        } else if (joyY > 550 && fdcY1 == 1) {
+            direcaoY = 0;
+            enableY = 0;
+            if (StepDriverXY == 1) {
+                posY -= 1;
+            }
+        } else {
+            enableY = 1;
+        }
+
+        // Logic for moving Z
+        if (BotaoZcima == 0 && fdcZ1 == 1) {
+            direcaoZ = 0;
+            enableZ = 0;
+            posZ += 1;
+        } else if (BotaoZbaixo == 0 && fdcZ1 == 1) {
+            direcaoZ = 1;
+            enableZ = 0;
+            posZ -= 1;
+
+        } else {
+            enableZ = 1;
+        }
+        if (saveButton == 0){
+            sinalJog = 2;
+            wait(0.5);
+        }
+        printf("\r X=%4d \n",posX);
+        printf("\r Y=%4d ",posY);
+        printf("\r Z=%4d ",posZ);
+
+    }
+    while (sinalJog == 2){
         enableX = 1;
-    }
-
-    // Logic for moving Y
-    if (joyY < 430 && fdcY1 == 1) {
-        direcaoY = 1;
-        enableY = 0;
-        if (StepDriverXY == 1) {
-            posY += 1;
-        }
-    } else if (joyY > 550 && fdcY1 == 1) {
-        direcaoY = 0;
-        enableY = 0;
-        if (StepDriverXY == 1) {
-            posY -= 1;
-        }
-    } else {
         enableY = 1;
-    }
-
-    // Logic for moving Z
-    if (BotaoZcima == 0 && fdcZ1 == 1) {
-        direcaoZ = 0;
-        enableZ = 0;
-        posZ += 1;
-    } else if (BotaoZbaixo == 0 && fdcZ1 == 1) {
-        direcaoZ = 1;
-        enableZ = 0;
-        posZ -= 1;
-    } else {
         enableZ = 1;
-    }
-
-    
-    if (saveButton == 0 && numSaved < 9) { // Check if save button is pressed and there is space to save
-        savedPositions[numSaved][0] = posX;
-        savedPositions[numSaved][1] = posY;
-        savedPositions[numSaved][2] = posZ;
-        wait(0.5);
-        for (int a = 0; a<3; a++){
-            pc.printf("\rsavedPositions[%i][%i]:%i\n",numSaved,a,savedPositions[numSaved][a]);
+        if (savedCount == 0){
+            savedPositions[savedCount][0] = posX;
+            savedPositions[savedCount][1] = posY;
+            savedPositions[savedCount][2] = posZ;
+            for (int a = 0; a<3; a++){
+                pc.printf("\rsavedPositions[%i][%i]:%i\n",savedCount,a,savedPositions[savedCount][a]);
+            }
+            savedCount++;
+            sinalJog=1;            
         }
-        numSaved++;
-    
-    if (savedCount >= 9) return;
+ 
+        else if (savedCount>0 && savedCount<=9){
+            selecionar = false;        
+            while(!selecionar){
+                if (BotaoZcima == 0){
+                    mililitros += 1;
+                }
+                if (BotaoZbaixo == 0){
+                    mililitros -= 1;
+                }
+                if (saveButton == 0){
+                    selecionar = true;
+                }
+            }
+            savedPositions[savedCount][0] = posX;
+            savedPositions[savedCount][1] = posY;
+            savedPositions[savedCount][2] = posZ;
+            savedPositions[savedCount][3] = mililitros;
+            savedCount++;
+            for (int a = 0; a<3; a++){
+                pc.printf("\rsavedPositions[%i][%i]:%i\n",savedCount,a,savedPositions[savedCount][a]);
+            }
+            sinalJog = 1;
+        }
+        /*else{
+            sinalJog = 3;
+        }*/
+    }
+    while (sinalJog==3){
+        enableX = 1;
+        enableY = 1;
+        enableZ = 1;
+        break;
     }
 }
 
@@ -182,10 +254,10 @@ void jog() {
 
 
 int main() {
-    pc.baud(9600);
-    pc.printf("inicio");
     wait(1);
     toggle.attach(&flip, 0.001); // Interval of 1/1000 of a second
+    pc.baud(9600);
+    pc.printf("inicio");
 
     enableX = 1;
     enableY = 1;
@@ -202,9 +274,7 @@ int main() {
         }
 
         if (i == 1) { // Manual control (jog)
-            jog();
-            // printSavedPositions();
-            
+            jog();            
         }
     }
 }
