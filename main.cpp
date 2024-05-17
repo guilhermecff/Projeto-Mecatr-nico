@@ -21,6 +21,8 @@ DigitalIn BotaoZcima(PC_11);
 DigitalIn BotaoZbaixo(PC_10);
 
 DigitalIn saveButton(PC_12); 
+DigitalIn voltarButton(PD_2); 
+
 
 AnalogIn EixoXJoyStick(A0);
 AnalogIn EixoYJoyStick(A1);
@@ -43,7 +45,7 @@ int posY=0;
 int posZ=0;
 int joyX;
 int joyY;
-bool selecionar = false;
+int selecionar = 0;
 int mililitros = 1;
 int sinalJog = 1;
 
@@ -115,30 +117,6 @@ void refEixoZ(){
 
 }
 
-/*int quantidades(){
-    selecionar = false;
-    mililitros = 1;
-    enableX = 1;
-    enableY = 1;
-    enableZ = 1;
-
-    while(!selecionar){
-        if (BotaoZcima == 0){
-            mililitros += 1;
-        }
-        if (BotaoZbaixo == 0){
-            mililitros -= 1;
-        }
-        if (saveButton == 0){
-            selecionar = true;
-        }
-    return mililitros;
-
-    }
-        
-}*/
-
-
 void jog(){
     while (sinalJog == 1){
         joyX = EixoXJoyStick.read() * 1000;
@@ -200,47 +178,52 @@ void jog(){
         printf("\r Z=%4d ",posZ);
 
     }
-    while (sinalJog == 2){
-        enableX = 1;
-        enableY = 1;
-        enableZ = 1;
-        if (savedCount == 0){
-            savedPositions[savedCount][0] = posX;
-            savedPositions[savedCount][1] = posY;
-            savedPositions[savedCount][2] = posZ;
-            for (int a = 0; a<3; a++){
-                pc.printf("\rsavedPositions[%i][%i]:%i\n",savedCount,a,savedPositions[savedCount][a]);
-            }
-            savedCount++;
-            sinalJog=1;            
+    while (sinalJog == 2) {
+    enableX = 1;
+    enableY = 1;
+    enableZ = 1;
+    if (savedCount == 0) {
+        savedPositions[savedCount][0] = posX;
+        savedPositions[savedCount][1] = posY;
+        savedPositions[savedCount][2] = posZ;
+        for (int a = 0; a < 3; a++) {
+            pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount, a, savedPositions[savedCount][a]);
         }
- 
-        else if (savedCount>0 && savedCount<=9){
-            selecionar = false;        
-            while(!selecionar){
-                if (BotaoZcima == 0){
-                    mililitros += 1;
-                }
-                if (BotaoZbaixo == 0){
-                    mililitros -= 1;
-                }
-                if (saveButton == 0){
-                    selecionar = true;
-                }
+        savedCount++;
+        sinalJog = 1;
+    } else if (savedCount > 0 && savedCount <= 9) {
+        selecionar = 0;
+        while (selecionar == 0) {
+            if (BotaoZcima == 0) {
+                mililitros += 1;
+                // Add a small delay to avoid rapid increment
+                wait(0.2);
             }
-            savedPositions[savedCount][0] = posX;
-            savedPositions[savedCount][1] = posY;
-            savedPositions[savedCount][2] = posZ;
-            savedPositions[savedCount][3] = mililitros;
-            savedCount++;
-            for (int a = 0; a<3; a++){
-                pc.printf("\rsavedPositions[%i][%i]:%i\n",savedCount,a,savedPositions[savedCount][a]);
+            if (BotaoZbaixo == 0) {
+                mililitros -= 1;
+                // Add a small delay to avoid rapid decrement
+                wait(0.2);
             }
-            sinalJog = 1;
+            printf("\r mililitros=%4d \n ",mililitros);
+            if (saveButton == 0) {
+                selecionar = 1;
+            }
         }
-        /*else{
+        savedPositions[savedCount][0] = posX;
+        savedPositions[savedCount][1] = posY;
+        savedPositions[savedCount][2] = posZ;
+        savedPositions[savedCount][3] = mililitros; // Assuming savedPositions has 4 columns
+        savedCount++;
+        mililitros = 0;
+        wait(0.3);
+
+        for (int a = 0; a < 4; a++) { // Looping up to 4 to include mililitros
+            pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount - 1, a, savedPositions[savedCount - 1][a]);
+        }
+        sinalJog = 1;
+        }else{
             sinalJog = 3;
-        }*/
+        }
     }
     while (sinalJog==3){
         enableX = 1;
@@ -258,7 +241,6 @@ int main() {
     toggle.attach(&flip, 0.001); // Interval of 1/1000 of a second
     pc.baud(9600);
     pc.printf("inicio");
-
     enableX = 1;
     enableY = 1;
     enableZ = 1;
