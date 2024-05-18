@@ -13,8 +13,8 @@ DigitalOut direcaoY(D7);
 DigitalOut enableY(D8);
 InterruptIn fdcY1(D5); // ymax
 // PARA Z
-DigitalOut direcaoZ(D14);
-DigitalOut enableZ(D15);
+DigitalOut direcaoZ(PA_12);
+DigitalOut enableZ(PA_11);
 InterruptIn fdcZ1(D4); // zmax
 
 DigitalIn BotaoZcima(PC_11);
