@@ -1,5 +1,6 @@
 #include "mbed.h"
 #include "TextLCD.h"
+#include <cstdio>
 
 
 
@@ -146,6 +147,7 @@ void refEixoX(){
     }
 
 }
+
 void refEixoY(){
     enableY=1;
     direcaoY=0;
@@ -183,124 +185,248 @@ void refEixoZ(){
 
 }
 
-void jog(){
-    while (sinalJog == 1){
-        joyX = EixoXJoyStick.read() * 1000;
-        joyY = EixoYJoyStick.read() * 1000;
-        
-        // Logic for moving X
-        if (joyX < 430 && fdcX1 == 1) {
-            direcaoX = 1;
-            enableX = 0;
-            if (StepDriverXY == 1) {
-                posX += 1;
+void jog() {
+    while (true) {
+        while (sinalJog == 1) {
+            joyX = EixoXJoyStick.read() * 1000;
+            joyY = EixoYJoyStick.read() * 1000;
+            
+            // Lógica para mover o eixo X
+            if (joyX < 430 && fdcX1 == 1) {
+                direcaoX = 1;
+                enableX = 0;
+                if (StepDriverXY == 1) {
+                    posX += 1;
+                }
+            } else if (joyX > 550 && fdcX1 == 1) {
+                direcaoX = 0;
+                enableX = 0;
+                if (StepDriverXY == 1) {
+                    posX -= 1;
+                }
+            } else {
+                enableX = 1;
             }
-        } else if (joyX > 550 && fdcX1 == 1) {
-            direcaoX = 0;
-            enableX = 0;
-            if (StepDriverXY == 1) {
-                posX -= 1;
+
+            // Lógica para mover o eixo Y
+            if (joyY < 430 && fdcY1 == 1) {
+                direcaoY = 1;
+                enableY = 0;
+                if (StepDriverXY == 1) {
+                    posY += 1;
+                }
+            } else if (joyY > 550 && fdcY1 == 1) {
+                direcaoY = 0;
+                enableY = 0;
+                if (StepDriverXY == 1) {
+                    posY -= 1;
+                }
+            } else {
+                enableY = 1;
             }
-        } else {
+
+            // Lógica para mover o eixo Z
+            if (BotaoZcima == 0 && fdcZ1 == 1) {
+                direcaoZ = 0;
+                enableZ = 0;
+                posZ += 1;
+            } else if (BotaoZbaixo == 0 && fdcZ1 == 1) {
+                direcaoZ = 1;
+                enableZ = 0;
+                posZ -= 1;
+            } else {
+                enableZ = 1;
+            }
+            
+            if (saveButton == 0) {
+                sinalJog = 2;
+                wait(0.5);
+            }
+            printf("\r X=%4d \n", posX);
+            printf("\r Y=%4d ", posY);
+            printf("\r Z=%4d ", posZ);
+        }
+
+        while (sinalJog == 2) {
             enableX = 1;
-        }
-
-        // Logic for moving Y
-        if (joyY < 430 && fdcY1 == 1) {
-            direcaoY = 1;
-            enableY = 0;
-            if (StepDriverXY == 1) {
-                posY += 1;
-            }
-        } else if (joyY > 550 && fdcY1 == 1) {
-            direcaoY = 0;
-            enableY = 0;
-            if (StepDriverXY == 1) {
-                posY -= 1;
-            }
-        } else {
             enableY = 1;
+            enableZ = 1;
+            if (savedCount == 0) {
+                lcd_show(4);
+                savedPositions[savedCount][0] = posX;
+                savedPositions[savedCount][1] = posY;
+                savedPositions[savedCount][2] = posZ;
+                for (int a = 0; a < 3; a++) {
+                    pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount, a, savedPositions[savedCount][a]);
+                }
+                savedCount++;
+                sinalJog = 1;
+            } else if (savedCount > 0 && savedCount <= 9) {
+                selecionar = 0;
+                while (selecionar == 0) {
+                    lcd_show(6);
+                    if (BotaoZcima == 0) {
+                        mililitros += 1;
+                        wait(0.2);
+                    }
+                    if (BotaoZbaixo == 0) {
+                        mililitros -= 1;
+                        wait(0.2);
+                    }
+                    printf("\r mililitros=%4d \n ", mililitros);
+                    if (saveButton == 0) {
+                        selecionar = 1;
+                    }
+                }
+                lcd_show(5);
+                savedPositions[savedCount][0] = posX;
+                savedPositions[savedCount][1] = posY;
+                savedPositions[savedCount][2] = posZ;
+                savedPositions[savedCount][3] = mililitros; // Supondo que savedPositions tenha 4 colunas
+                savedCount++;
+                mililitros = 0;
+                wait_ms(1000);
+
+                for (int a = 0; a < 4; a++) { // Looping up to 4 to include mililitros
+                    pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount - 1, a, savedPositions[savedCount - 1][a]);
+                }
+                sinalJog = 1;
+            } else {
+                sinalJog = 3;
+            }
         }
 
-        // Logic for moving Z
-        if (BotaoZcima == 0 && fdcZ1 == 1) {
+        if (sinalJog == 3) {
+            enableX = 1;
+            enableY = 1;
+            enableZ = 1;
+            break;
+        }
+    }
+}
+
+
+void voltarInicial() {
+    // Mover para Z inicial
+    while (posZ != 0) {
+        if (posZ < 0) {
             direcaoZ = 0;
             enableZ = 0;
             posZ += 1;
-        } else if (BotaoZbaixo == 0 && fdcZ1 == 1) {
+        } else if (posZ > 0) {
             direcaoZ = 1;
             enableZ = 0;
             posZ -= 1;
-
-        } else {
-            enableZ = 1;
         }
-        if (saveButton == 0){
-            sinalJog = 2;
-            wait(0.5);
-        }
-        printf("\r X=%4d \n",posX);
-        printf("\r Y=%4d ",posY);
-        printf("\r Z=%4d ",posZ);
-
+        wait_ms(100);
+        
     }
-    while (sinalJog == 2) {
-    enableX = 1;
-    enableY = 1;
     enableZ = 1;
-    if (savedCount == 0) {
-        lcd_show(4);
-        savedPositions[savedCount][0] = posX;
-        savedPositions[savedCount][1] = posY;
-        savedPositions[savedCount][2] = posZ;
-        for (int a = 0; a < 3; a++) {
-            pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount, a, savedPositions[savedCount][a]);
-        }
-        savedCount++;
-        sinalJog = 1;
-    } else if (savedCount > 0 && savedCount <= 9) {
-        selecionar = 0;
-        while (selecionar == 0) {
-            lcd_show(6);
-            if (BotaoZcima == 0) {
-                mililitros += 1;
-                // Add a small delay to avoid rapid increment
-                wait(0.2);
-            }
-            if (BotaoZbaixo == 0) {
-                mililitros -= 1;
-                // Add a small delay to avoid rapid decrement
-                wait(0.2);
-            }
-            printf("\r mililitros=%4d \n ",mililitros);
-            if (saveButton == 0) {
-                selecionar = 1;
-            }
-        }
-        lcd_show(5);
-        savedPositions[savedCount][0] = posX;
-        savedPositions[savedCount][1] = posY;
-        savedPositions[savedCount][2] = posZ;
-        savedPositions[savedCount][3] = mililitros; // Assuming savedPositions has 4 columns
-        savedCount++;
-        mililitros = 0;
-        wait_ms(1000);
 
-        for (int a = 0; a < 4; a++) { // Looping up to 4 to include mililitros
-            pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount - 1, a, savedPositions[savedCount - 1][a]);
+    // Mover para Y inicial
+    while (posY != 0) {
+        if (posY < 0) {
+            direcaoY = 1;
+            enableY = 0;
+            posY += 1;
+        } else if (posY > 0) {
+            direcaoY = 0;
+            enableY = 0;
+            posY -= 1;
         }
-        sinalJog = 1;
-        }else{
-            sinalJog = 3;
-        }
+        wait_ms(100);
     }
-    while (sinalJog==3){
-        enableX = 1;
-        enableY = 1;
-        enableZ = 1;
-        break;
+    enableY = 1;
+
+    // Mover para X inicial
+    while (posX != 0) {
+        if (posX < 0) {
+            direcaoX = 1;
+            enableX = 0;
+            posX += 1;
+        } else if (posX > 0) {
+            direcaoX = 0;
+            enableX = 0;
+            posX -= 1;
+        }
+        wait_ms(100);
+    }
+    enableX = 1;
+}
+
+void moveToPosition(int targetX, int targetY, int targetZ) {
+    // Move to Z position
+    while (posZ != targetZ) {
+        if (posZ < targetZ) {
+            direcaoZ = 0;
+            enableZ = 0;
+            posZ += 1;
+        } else if (posZ > targetZ) {
+            direcaoZ = 1;
+            enableZ = 0;
+            posZ -= 1;
+        }
+        wait_ms(10);
+    }
+    enableZ = 1;
+
+    // Move to Y position
+    while (posY != targetY) {
+        if (posY < targetY) {
+            direcaoY = 1;
+            enableY = 0;
+            posY += 1;
+        } else if (posY > targetY) {
+            direcaoY = 0;
+            enableY = 0;
+            posY -= 1;
+        }
+        wait_ms(10);
+    }
+    enableY = 1;
+
+    // Move to X position
+    while (posX != targetX) {
+        if (posX < targetX) {
+            direcaoX = 1;
+            enableX = 0;
+            posX += 1;
+        } else if (posX > targetX) {
+            direcaoX = 0;
+            enableX = 0;
+            posX -= 1;
+        }
+        wait_ms(10);
+    }
+    enableX = 1;
+}
+
+
+void jogautomatico() {
+    for (int j = 1; j < savedCount; j++) {
+        int targetX = savedPositions[j][0];
+        int targetY = savedPositions[j][1];
+        int targetZ = savedPositions[j][2];
+        int mililitros = savedPositions[j][3];
+        int inicialX = savedPositions[0][0];
+        int inicialY = savedPositions[0][1];
+        int inicialZ = savedPositions[0][2];
+
+        while (mililitros > 0) {
+            // Move to the initial position (first saved position) based on initial positions
+            moveToPosition(inicialX,inicialY,inicialZ);
+            wait(0.5);  // Simulate delay for picking up liquid
+
+            // Move to the target position
+            moveToPosition(targetX, targetY, targetZ);
+            wait(0.5);  // Simulate delay for pouring liquid
+
+            mililitros--;
+        }
     }
 }
+
+
 
 
 
@@ -336,6 +462,7 @@ int main() {
             refEixoY();
             refEixoZ();
             lcd_show(2);
+
           
             i = 3;
         }
@@ -343,12 +470,23 @@ int main() {
             if(saveButton==0){
                 i = 4;
                 wait_ms(1000);
+                pc.printf("Guiga");
             }
 
         }
 
         else if (i == 4) { // Manual control (jog)
-            jog();            
+            jog();     
+            i = 5;       
+        }
+        else if (i == 5){
+            pc.printf("VoltarInicio\n");
+            voltarInicial();
+            i = 6;
+        }
+        else if (i==6){
+            jogautomatico();
+
         }
     }
 }
