@@ -320,30 +320,34 @@ int main() {
     while (1) {
         if (i==0){
             lcd_show(0);
+            i = 1;
+        }
+        if(i==1){
             if(saveButton==0){
-                i = 1;
+                i = 2;
                 wait_ms(1000);
             }
-
         }
-        else if (i == 1) { // Reference positioning
+
+        
+        else if (i == 2) { // Reference positioning
             lcd_show(1);
             refEixoX();
             refEixoY();
             refEixoZ();
-          
-            i = 2;
-        }
-        else if (i == 2){
             lcd_show(2);
+          
+            i = 3;
+        }
+        else if (i == 3){
             if(saveButton==0){
-                i = 3;
+                i = 4;
                 wait_ms(1000);
             }
 
         }
 
-        else if (i == 3) { // Manual control (jog)
+        else if (i == 4) { // Manual control (jog)
             jog();            
         }
     }
