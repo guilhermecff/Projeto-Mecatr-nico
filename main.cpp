@@ -1,4 +1,5 @@
 #include "mbed.h"
+#include "TextLCD.h"
 
 
 
@@ -13,8 +14,8 @@ DigitalOut direcaoY(D7);
 DigitalOut enableY(D8);
 InterruptIn fdcY1(D5); // ymax
 // PARA Z
-DigitalOut direcaoZ(PA_12);
-DigitalOut enableZ(PA_11);
+DigitalOut direcaoZ(PA_11);
+DigitalOut enableZ(PA_12);
 InterruptIn fdcZ1(D4); // zmax
 
 DigitalIn BotaoZcima(PC_11);
@@ -28,7 +29,8 @@ AnalogIn EixoXJoyStick(A0);
 AnalogIn EixoYJoyStick(A1);
 
 
-
+I2C i2c_lcd(PB_9,PB_8);
+TextLCD_I2C lcd(&i2c_lcd,0x4e, TextLCD::LCD20x4);
 
 
 
@@ -48,6 +50,8 @@ int joyY;
 int selecionar = 0;
 int mililitros = 1;
 int sinalJog = 1;
+int lcdref = 0;
+
 
 int savedPositions[9][4]; // Array to store up to 9 positions [x, y, z]
 
@@ -61,6 +65,68 @@ int numSaved = 0;
 void flip() {
     StepDriverXY = !StepDriverXY;
 }
+
+void lcd_show(int state) {
+    switch(state) {
+        case 0:
+        lcd.cls();
+        lcd.locate(0,0);
+        lcd.printf("Ola \n");
+        lcd.printf("Pressione o \n");
+        lcd.printf("botao amarelo \n");
+        lcd.printf("para referenciar");
+        break;
+        
+        case 1: 
+        lcd.cls();
+        lcd.printf("Referenciamento \n");
+        lcd.printf("sendo \n");
+        lcd.printf("executado... \n");
+        break;
+
+        case 2:
+        lcd.cls();
+        lcd.printf("Referenciamento \n");
+        lcd.printf("concluido \n");
+        lcd.printf("Deseja selecionar a posicao de pega? \n");
+        break;
+
+        case 3:
+        lcd.cls();
+        lcd.printf("Botao de emergencia  \n");
+        lcd.printf("Travamento   \n");
+        lcd.printf("Automatico   \n");
+        break;
+
+        case 4:
+        lcd.cls();
+        lcd.printf("Coleta Principal\n");
+        lcd.printf(" X:%4d\n", posX);
+        lcd.printf(" Y:%4d\n", posY);
+        lcd.printf(" Z:%4d\n", posZ);
+        // lcd.printf("Pressione 'CNFRM'");
+        break;
+
+        case 5:
+        lcd.cls();
+        lcd.printf("Coleta Outros\n");
+        lcd.printf(" X:%4d\n ", posX);
+        lcd.printf(" Y:%4d\n ", posY);
+        lcd.printf(" Z:%4d\n", posZ);
+        lcd.printf(" mililitros:%4d\n", mililitros);
+        // lcd.printf("Pressione 'CNFRM'");
+        break;
+
+        case 6:
+        lcd.cls();
+        lcd.printf("Quantos\n");
+        lcd.printf("mililitros: %3d\n", mililitros);
+        lcd.printf("Aperte Amarelo para confirmar");
+        break;
+
+    }
+}
+
 
 
 void refEixoX(){
@@ -183,6 +249,7 @@ void jog(){
     enableY = 1;
     enableZ = 1;
     if (savedCount == 0) {
+        lcd_show(4);
         savedPositions[savedCount][0] = posX;
         savedPositions[savedCount][1] = posY;
         savedPositions[savedCount][2] = posZ;
@@ -194,6 +261,7 @@ void jog(){
     } else if (savedCount > 0 && savedCount <= 9) {
         selecionar = 0;
         while (selecionar == 0) {
+            lcd_show(6);
             if (BotaoZcima == 0) {
                 mililitros += 1;
                 // Add a small delay to avoid rapid increment
@@ -209,13 +277,14 @@ void jog(){
                 selecionar = 1;
             }
         }
+        lcd_show(5);
         savedPositions[savedCount][0] = posX;
         savedPositions[savedCount][1] = posY;
         savedPositions[savedCount][2] = posZ;
         savedPositions[savedCount][3] = mililitros; // Assuming savedPositions has 4 columns
         savedCount++;
         mililitros = 0;
-        wait(0.3);
+        wait_ms(1000);
 
         for (int a = 0; a < 4; a++) { // Looping up to 4 to include mililitros
             pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount - 1, a, savedPositions[savedCount - 1][a]);
@@ -245,17 +314,36 @@ int main() {
     enableY = 1;
     enableZ = 1;
     StepDriverXY = 1;
+    lcd.setBacklight(TextLCD::LightOn);
+
 
     while (1) {
-        if (i == 0) { // Reference positioning
+        if (i==0){
+            lcd_show(0);
+            if(saveButton==0){
+                i = 1;
+                wait_ms(1000);
+            }
+
+        }
+        else if (i == 1) { // Reference positioning
+            lcd_show(1);
             refEixoX();
             refEixoY();
             refEixoZ();
           
-            i = 1;
+            i = 2;
+        }
+        else if (i == 2){
+            lcd_show(2);
+            if(saveButton==0){
+                i = 3;
+                wait_ms(1000);
+            }
+
         }
 
-        if (i == 1) { // Manual control (jog)
+        else if (i == 3) { // Manual control (jog)
             jog();            
         }
     }
