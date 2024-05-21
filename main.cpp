@@ -2,56 +2,66 @@
 #include "TextLCD.h"
 #include <cstdio>
 
+// Ticker
 Ticker toggle;
-// PARA X
+
+// Controle do Motor de Passo para o Eixo X
 DigitalOut StepDriverXY(D11);
 DigitalOut direcaoX(D12);
 DigitalOut enableX(D13);
-InterruptIn fdcX1(D10); // xmax
-InterruptIn fdcX2(PB_2);
-//PARA Y
+InterruptIn fdcX1(D10); // Fim de curso máximo do eixo X
+InterruptIn fdcX2(PB_2); // Fim de curso mínimo do eixo X
+
+// Controle do Motor de Passo para o Eixo Y
 DigitalOut direcaoY(D7);
 DigitalOut enableY(D8);
-InterruptIn fdcY1(D5); // ymax
-InterruptIn fdcY2(PB_1);
-// PARA Z
+InterruptIn fdcY1(D5); // Fim de curso máximo do eixo Y
+InterruptIn fdcY2(PB_1); // Fim de curso mínimo do eixo Y
+
+// Controle do Motor de Passo para o Eixo Z
 DigitalOut direcaoZ(PA_11);
 DigitalOut enableZ(PA_12);
-InterruptIn fdcZ1(D4); // zmax
-InterruptIn fdcZ2(PB_15);
+InterruptIn fdcZ1(D4); // Fim de curso máximo do eixo Z
+InterruptIn fdcZ2(PB_15); // Fim de curso mínimo do eixo Z
 
+// Botões para controle manual do eixo Z
 DigitalIn BotaoZcima(PC_12);
 DigitalIn BotaoZbaixo(PC_10);
 
+// Botões de controle
 DigitalIn saveButton(PC_11); 
 DigitalIn voltarButton(PD_2); 
 
+// Entradas analógicas do Joystick
 AnalogIn EixoXJoyStick(PA_0);
 AnalogIn EixoYJoyStick(PA_1);
 
+// I2C para o LCD
 I2C i2c_lcd(PB_9, PB_8);
 TextLCD_I2C lcd(&i2c_lcd, 0x4e, TextLCD::LCD20x4);
 
+// Saída digital para controle da pipeta
 DigitalOut pipeta(PA_13);
 
-// BOTAO DE EMERGENCIA
+// Botão de emergência
 InterruptIn botaoEmergencia(PC_3);
 
+// LED verde de status
 DigitalOut LedVerd(PB_3);
 
+// Comunicação serial
+Serial pc(USBTX, USBRX);
 
-
-Serial pc(USBTX, USBRX); // declara o objeto pc para comunicação serial
+// Variáveis globais
 bool lcdShow10Shown = false;
-
 int y, ymax, ymin;
 int i = 0;
-bool referenciadoX=false;
-bool referenciadoY=false;
-bool referenciadoZ=false;
-int posX=0;
-int posY=0;
-int posZ=0;
+bool referenciadoX = false;
+bool referenciadoY = false;
+bool referenciadoZ = false;
+int posX = 0;
+int posY = 0;
+int posZ = 0;
 int joyX;
 int joyY;
 int selecionar = 0;
@@ -59,16 +69,10 @@ int mililitros = 1;
 int sinalJog = 1;
 int lcdref = 0;
 
-
-int savedPositions[9][4]; // Array to store up to 9 positions [x, y, z]
-
-
-
-int savedCount = 0; // This will keep track of how many positions have been saved
+int savedPositions[9][4]; // Array para armazenar até 9 posições [x, y, z]
+int savedCount = 0; // Mantém o rastreamento de quantas posições foram salvas
 int numSaved = 0;
-int lastMililitros = -1;     // Variável para armazenar o último valor de mililitros
-
-
+int lastMililitros = -1; // Variável para armazenar o último valor de mililitros
 
 void flip() {
     StepDriverXY = !StepDriverXY;
@@ -142,8 +146,7 @@ void lcd_show(int state) {
 
         case 8:
         lcd.cls();
-        lcd.printf("Pipetamento Completado\n");
-        lcd.printf("Obrigado\n");
+        lcd.printf("pipetamento Completo\n");
         lcd.printf("Quer pipetar de novo?\n");
         break;
 
