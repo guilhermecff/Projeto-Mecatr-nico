@@ -37,6 +37,8 @@ DigitalOut pipeta(PA_13);
 // BOTAO DE EMERGENCIA
 InterruptIn botaoEmergencia(PC_3);
 
+DigitalOut LedVerd(PB_3);
+
 
 
 Serial pc(USBTX, USBRX); // declara o objeto pc para comunicação serial
@@ -141,7 +143,8 @@ void lcd_show(int state) {
         case 8:
         lcd.cls();
         lcd.printf("Pipetamento Completado\n");
-        lcd.printf("Obrigado");
+        lcd.printf("Obrigado\n");
+        lcd.printf("Quer pipetar de novo?\n");
         break;
 
        
@@ -477,31 +480,39 @@ void jogautomatico() {
         int inicialX = savedPositions[0][0];
         int inicialY = savedPositions[0][1];
         int inicialZ = savedPositions[0][2];
-
+        int fakeml = 0; // Iniciar com 0 e incrementar até mililitros
+        
         lcd.cls();
         lcd.printf("Pipetamento\n");
         lcd.printf("Numero Atual:%4d\n ", j);
         lcd.printf("mililitros:%4d\n", mililitros);
 
-        while (mililitros > 0) {
+        while (fakeml < mililitros) {
+            if (voltarButton == 0) { // Verifica se o voltarButton foi pressionado
+                return; // Sai da função jogautomatico
+            }
+            
             // Move to the initial position (first saved position) based on initial positions
             moveToPosition(inicialX, inicialY, inicialZ);
-            pipeta != pipeta
+            pipeta = !pipeta;
             wait_ms(50);  // Simulate delay for picking up liquid
-            pipeta != pipeta
+            pipeta = !pipeta;
             wait_ms(3000);
 
             // Move to the target position
             moveToPosition(targetX, targetY, targetZ);
-            pipeta != pipeta
+            pipeta = !pipeta;
             wait_ms(50);  // Simulate delay for picking up liquid
-            pipeta != pipeta
+            pipeta = !pipeta;
             wait_ms(3000);
 
-            mililitros--;
-        
+            fakeml++;
+
+            // Atualiza o LCD com os mililitros restantes
+            lcd.locate(0, 2);
+            lcd.printf("mililitros restantes:%4d\n", mililitros - fakeml);
         }
-    }
+    }    
 }
 
 
@@ -574,8 +585,15 @@ int main() {
         else if (i==7){
             jogautomatico();
             lcd_show(8);
-            break;
+            i = 8;
+            LedVerd = 1;
 
+        }
+        else if (i==8){ 
+            if(saveButton==0){
+                i = 7;
+            }
+            LedVerd = 1;
         }
     }
 }
