@@ -2,37 +2,40 @@
 #include "TextLCD.h"
 #include <cstdio>
 
-
-
 Ticker toggle;
 // PARA X
 DigitalOut StepDriverXY(D11);
 DigitalOut direcaoX(D12);
 DigitalOut enableX(D13);
 InterruptIn fdcX1(D10); // xmax
+InterruptIn fdcX2(PB_2);
 //PARA Y
 DigitalOut direcaoY(D7);
 DigitalOut enableY(D8);
 InterruptIn fdcY1(D5); // ymax
+InterruptIn fdcY2(PB_1);
 // PARA Z
 DigitalOut direcaoZ(PA_11);
 DigitalOut enableZ(PA_12);
 InterruptIn fdcZ1(D4); // zmax
+InterruptIn fdcZ2(PB_15);
 
-DigitalIn BotaoZcima(PC_11);
+DigitalIn BotaoZcima(PC_12);
 DigitalIn BotaoZbaixo(PC_10);
 
-DigitalIn saveButton(PC_12); 
+DigitalIn saveButton(PC_11); 
 DigitalIn voltarButton(PD_2); 
 
+AnalogIn EixoXJoyStick(PA_0);
+AnalogIn EixoYJoyStick(PA_1);
 
-AnalogIn EixoXJoyStick(A0);
-AnalogIn EixoYJoyStick(A1);
+I2C i2c_lcd(PB_9, PB_8);
+TextLCD_I2C lcd(&i2c_lcd, 0x4e, TextLCD::LCD20x4);
 
+DigitalOut pipeta(PA_13);
 
-I2C i2c_lcd(PB_9,PB_8);
-TextLCD_I2C lcd(&i2c_lcd,0x4e, TextLCD::LCD20x4);
-
+// BOTAO DE EMERGENCIA
+InterruptIn botaoEmergencia(PC_3);
 
 
 Serial pc(USBTX, USBRX); // declara o objeto pc para comunicação serial
@@ -450,6 +453,7 @@ int main() {
         }
         if(i==1){
             if(saveButton==0){
+                pc.printf("Ref");
                 i = 2;
                 wait_ms(1000);
             }
