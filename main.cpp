@@ -38,8 +38,9 @@ DigitalOut pipeta(PA_13);
 InterruptIn botaoEmergencia(PC_3);
 
 
-Serial pc(USBTX, USBRX); // declara o objeto pc para comunicação serial
 
+Serial pc(USBTX, USBRX); // declara o objeto pc para comunicação serial
+bool lcdShow10Shown = false;
 
 int y, ymax, ymin;
 int i = 0;
@@ -63,6 +64,7 @@ int savedPositions[9][4]; // Array to store up to 9 positions [x, y, z]
 
 int savedCount = 0; // This will keep track of how many positions have been saved
 int numSaved = 0;
+int lastMililitros = -1;     // Variável para armazenar o último valor de mililitros
 
 
 
@@ -114,10 +116,12 @@ void lcd_show(int state) {
         case 5:
         lcd.cls();
         lcd.printf("Coleta Outros\n");
-        lcd.printf(" X:%4d\n ", posX);
-        lcd.printf(" Y:%4d\n ", posY);
-        lcd.printf(" Z:%4d\n", posZ);
+        lcd.printf("X:%4d ", posX);
+        lcd.printf("Y:%4d ", posY);
+        lcd.printf("Z:%4d", posZ);
         lcd.printf(" mililitros:%4d\n", mililitros);
+        lcd.printf(" Posicao:%4d\n", savedCount);
+
         // lcd.printf("Pressione 'CNFRM'");
         break;
 
@@ -127,6 +131,27 @@ void lcd_show(int state) {
         lcd.printf("mililitros: %3d\n", mililitros);
         lcd.printf("Aperte Amarelo para confirmar");
         break;
+
+        case 7:
+        lcd.cls();
+        lcd.printf("Fim da Selecao\n");
+        lcd.printf("Aperte Amarelo para pipetagem");
+        break;
+
+        case 8:
+        lcd.cls();
+        lcd.printf("Pipetamento Completado\n");
+        lcd.printf("Obrigado");
+        break;
+
+       
+
+        case 10:
+        lcd.cls();
+        lcd.printf("\n");
+        lcd.printf(" Escolha a posicao\n ");
+        break;
+
 
     }
 }
@@ -190,7 +215,15 @@ void refEixoZ(){
 
 void jog() {
     while (true) {
+        if (voltarButton == 0) { // Verifica se o voltarButton foi pressionado
+            break; // Sai do loop principal e termina a função
+        }
+
         while (sinalJog == 1) {
+            if (!lcdShow10Shown) {
+                lcd_show(10); // Mostra o lcd_show(10) apenas uma vez
+                lcdShow10Shown = true;
+            }
             joyX = EixoXJoyStick.read() * 1000;
             joyY = EixoYJoyStick.read() * 1000;
             
@@ -243,11 +276,22 @@ void jog() {
             
             if (saveButton == 0) {
                 sinalJog = 2;
-                wait(0.5);
+                wait_ms(50);
             }
             printf("\r X=%4d \n", posX);
             printf("\r Y=%4d ", posY);
             printf("\r Z=%4d ", posZ);
+            if (sinalJog != 1) {
+                lcdShow10Shown = false; // Reseta a flag quando sair do modo 'jog'
+            }
+
+            if (voltarButton == 0) { // Verifica se o voltarButton foi pressionado
+                break; // Sai do loop sinalJog == 1
+            }
+        }
+
+        if (voltarButton == 0) { // Verifica se o voltarButton foi pressionado
+            break; // Sai do loop principal e termina a função
         }
 
         while (sinalJog == 2) {
@@ -256,6 +300,7 @@ void jog() {
             enableZ = 1;
             if (savedCount == 0) {
                 lcd_show(4);
+                wait_ms(2000);
                 savedPositions[savedCount][0] = posX;
                 savedPositions[savedCount][1] = posY;
                 savedPositions[savedCount][2] = posZ;
@@ -267,7 +312,11 @@ void jog() {
             } else if (savedCount > 0 && savedCount <= 9) {
                 selecionar = 0;
                 while (selecionar == 0) {
-                    lcd_show(6);
+                    // Atualiza o display apenas se o valor de mililitros mudar
+                    if (mililitros != lastMililitros) {
+                        lcd_show(6);
+                        lastMililitros = mililitros;
+                    }
                     if (BotaoZcima == 0) {
                         mililitros += 1;
                         wait(0.2);
@@ -280,7 +329,16 @@ void jog() {
                     if (saveButton == 0) {
                         selecionar = 1;
                     }
+
+                    if (voltarButton == 0) { // Verifica se o voltarButton foi pressionado
+                        break; // Sai do loop selecionar
+                    }
                 }
+
+                if (voltarButton == 0) { // Verifica se o voltarButton foi pressionado
+                    break; // Sai do loop sinalJog == 2
+                }
+
                 lcd_show(5);
                 savedPositions[savedCount][0] = posX;
                 savedPositions[savedCount][1] = posY;
@@ -294,9 +352,14 @@ void jog() {
                     pc.printf("\rsavedPositions[%i][%i]:%i\n", savedCount - 1, a, savedPositions[savedCount - 1][a]);
                 }
                 sinalJog = 1;
+                lastMililitros = -1; // Reseta para garantir atualização correta na próxima vez
             } else {
                 sinalJog = 3;
             }
+        }
+
+        if (voltarButton == 0) { // Verifica se o voltarButton foi pressionado
+            break; // Sai do loop principal e termina a função
         }
 
         if (sinalJog == 3) {
@@ -415,20 +478,31 @@ void jogautomatico() {
         int inicialY = savedPositions[0][1];
         int inicialZ = savedPositions[0][2];
 
+        lcd.cls();
+        lcd.printf("Pipetamento\n");
+        lcd.printf("Numero Atual:%4d\n ", j);
+        lcd.printf("mililitros:%4d\n", mililitros);
+
         while (mililitros > 0) {
             // Move to the initial position (first saved position) based on initial positions
-            moveToPosition(inicialX,inicialY,inicialZ);
-            wait(0.5);  // Simulate delay for picking up liquid
+            moveToPosition(inicialX, inicialY, inicialZ);
+            pipeta != pipeta
+            wait_ms(50);  // Simulate delay for picking up liquid
+            pipeta != pipeta
+            wait_ms(3000);
 
             // Move to the target position
             moveToPosition(targetX, targetY, targetZ);
-            wait(0.5);  // Simulate delay for pouring liquid
+            pipeta != pipeta
+            wait_ms(50);  // Simulate delay for picking up liquid
+            pipeta != pipeta
+            wait_ms(3000);
 
             mililitros--;
+        
         }
     }
 }
-
 
 
 
@@ -462,9 +536,9 @@ int main() {
         
         else if (i == 2) { // Reference positioning
             lcd_show(1);
+            refEixoZ();
             refEixoX();
             refEixoY();
-            refEixoZ();
             lcd_show(2);
 
           
@@ -480,16 +554,27 @@ int main() {
         }
 
         else if (i == 4) { // Manual control (jog)
-            jog();     
+            jog();
+            lcd_show(7);     
             i = 5;       
         }
         else if (i == 5){
+            if(saveButton==0){
+                i = 6;
+                wait_ms(1000);
+                pc.printf("Guiga");
+            }
+
+        }
+        else if (i == 6){
             pc.printf("VoltarInicio\n");
             voltarInicial();
-            i = 6;
+            i = 7;
         }
-        else if (i==6){
+        else if (i==7){
             jogautomatico();
+            lcd_show(8);
+            break;
 
         }
     }
