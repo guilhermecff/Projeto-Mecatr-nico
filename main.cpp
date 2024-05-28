@@ -78,6 +78,17 @@ void flip() {
     StepDriverXY = !StepDriverXY;
 }
 
+
+void Emergencia(){
+    // Desativa todos os motores
+    enableX = 1;
+    enableY = 1;
+    enableZ = 1;
+
+    // Reinicia o sistema
+    NVIC_SystemReset();
+}
+
 void lcd_show(int state) {
     switch(state) {
         case 0:
@@ -103,13 +114,7 @@ void lcd_show(int state) {
         lcd.printf("Deseja selecionar a posicao de pega? \n");
         break;
 
-        case 3:
-        lcd.cls();
-        lcd.printf("Botao de emergencia  \n");
-        lcd.printf("Travamento   \n");
-        lcd.printf("Automatico   \n");
-        break;
-
+        
         case 4:
         lcd.cls();
         lcd.printf("Coleta Principal\n");
@@ -157,6 +162,14 @@ void lcd_show(int state) {
         lcd.printf("\n");
         lcd.printf(" Escolha a posicao\n ");
         break;
+
+        case 11:
+        lcd.cls();
+        lcd.printf("Botao de emergencia  \n");
+        lcd.printf("Travamento   \n");
+        lcd.printf("Automatico   \n");
+        break;
+
 
 
     }
@@ -532,6 +545,20 @@ int main() {
     enableZ = 1;
     StepDriverXY = 1;
     lcd.setBacklight(TextLCD::LightOn);
+
+    botaoEmergencia.fall(&Emergencia);
+
+    if(botaoEmergencia == 0){
+        lcd_show(11);
+        enableX = 1;
+        enableY = 1;
+        enableZ = 1;
+        StepDriverXY = 0;
+
+        // Aguarda até o botão de emergência ser solto
+        while(botaoEmergencia == 0){}
+    }
+
 
 
     while (1) {
